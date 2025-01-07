@@ -1,50 +1,68 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-	<title>Image Processing API</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Processing API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .output img {
+            max-width: 100%;
+            margin-top: 10px;
+        }
+    </style>
 </head>
-
 <body>
-	<h1>Image Processing API</h1>
+    <div class="container">
+        <h1>Image Processing API</h1>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <label for="image">Upload an Image:</label><br>
+            <input type="file" id="image" name="image" accept="image/*" required><br><br>
+            <label for="operation">Select Operation:</label><br>
+            <select id="operation" name="operation" required>
+                <option value="grayscale">Convert to Grayscale</option>
+                <option value="thumbnail">Generate Thumbnail</option>
+            </select><br><br>
+            <button type="submit">Process Image</button>
+        </form>
+        <div class="output" id="output"></div>
+    </div>
 
-	<form>
-		<input type="file" id="imageInput">
-		<button type="button" onclick="processImage()">Process Image</button>
-	</form>
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
 
-	<br>
+            const formData = new FormData();
+            const imageFile = document.getElementById('image').files[0];
+            const operation = document.getElementById('operation').value;
 
-	<img id="originalImage">
-	<br>
-	<img id="processedImage">
+            formData.append('image', imageFile);
+            formData.append('operation', operation);
 
-	<script>
-		const processImage = () => {
-			const file = document.getElementById('imageInput').files[0];
-			const url = 'https://api.imagga.com/v2/colors';
+            const response = await fetch('http://127.0.0.1:5000/process-image', {
+                method: 'POST',
+                body: formData,
+            });
 
-			const formData = new FormData();
-			formData.append('image', file);
-
-			fetch(url, {
-				method: 'POST',
-				body: formData,
-				headers: {
-					'Authorization': 'Basic ' + btoa('api_key:api_secret')
-				}
-			})
-				.then(response => response.json())
-				.then(data => {
-					const originalImage = document.getElementById('originalImage');
-					const processedImage = document.getElementById('processedImage');
-
-					originalImage.src = URL.createObjectURL(file);
-					processedImage.src = data.result.colors.image_colors[0].closest_palette_color_html;
-				})
-				.catch(error => console.error(error));
-		};
-	</script>
+            const data = await response.json();
+            const outputDiv = document.getElementById('output');
+            if (data.success) {
+                outputDiv.innerHTML = `<h3>Processed Image:</h3><img src="data:image/png;base64,${data.image}" alt="Processed Image">`;
+            } else {
+                outputDiv.innerHTML = `<p>Error: ${data.error}</p>`;
+            }
+        });
+    </script>
 </body>
-
 </html>
